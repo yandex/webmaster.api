@@ -9,7 +9,6 @@ require_once ($path."/tpl.php");
 require_once($apiScript);
 
 
-$client_id = 'cde79bf9920a413d9da83f74c945c26a';
-$client_secret = '7989137ae57d4098b3a8ae00be4ad6f9';
 
+require_once ($path."/local.conf.php");
 include $path."/auth.php";
