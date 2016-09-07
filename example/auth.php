@@ -4,7 +4,7 @@ session_start();
 
 if(empty($client_id)||empty($client_secret))
 {
-    die('Please, enter your client id and secret code to local.conf file');
+    die('Please, enter your client id and secret code to conf.php file');
 }
 
 if(!isset($_SESSION['access_token']))
