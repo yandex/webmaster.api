@@ -1,7 +1,7 @@
 <?php
 /**
  * Class webmaster_api
- * http://webmaster.dev.search.yandex.net:33542/doc/v3/#resource--704787757
+ *
  * Let me speak from my heart!
  *
  * @author Dmitriy V. Popov <dima@subdomain.ru>
