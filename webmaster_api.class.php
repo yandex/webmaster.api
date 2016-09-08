@@ -127,8 +127,8 @@ class webmasterApi
         // Шлем запрос в курл
         $ch = curl_init($url);
 
-        // нужно вернуть результат
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        // основные опции curl
+        $this->curlOpts($ch);
         // передаем заголовки
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $response = curl_exec($ch);
@@ -165,8 +165,8 @@ class webmasterApi
         $ch = curl_init($url);
         $data_json = json_encode($data);
 
-        // нужно вернуть результат
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        // основные опции курл
+        $this->curlOpts($ch);
         // передаем заголовки
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch,CURLOPT_POST,1);
@@ -205,8 +205,10 @@ class webmasterApi
         $ch = curl_init($url);
         $data_json = json_encode($data);
 
-        // нужно вернуть результат
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        // основные опции курл
+        $this->curlOpts($ch);
+
         // передаем заголовки
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -557,6 +559,23 @@ class webmasterApi
     }
 
 
+    /**
+     *
+     * Set Curl Options
+     *
+     * @param $ch resource curl
+     * @return true
+     */
+    public function curlOpts(&$ch)
+    {
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        return true;
+    }
+
+
 
     /**
      * Get Access token by code and client secret
@@ -591,6 +610,12 @@ class webmasterApi
         $ch = curl_init('https://oauth.yandex.ru/token');
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+
+
+
         $response = curl_exec($ch);
         curl_close($ch);
 
