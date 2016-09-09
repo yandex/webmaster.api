@@ -1,12 +1,20 @@
 <?php
 /**
- * Class webmaster_api
+ * PHP-SDK to Yandex Webmaster Api
  *
  * Let me speak from my heart!
  *
+ *
+ *
+ *
+ */
+
+
+/**
+ * Class webmaster_api
+ *
  * @author Dmitriy V. Popov <dima@subdomain.ru>
- *
- *
+ * @copyright Yandex LLC
  */
 class webmasterApi
 {
@@ -67,6 +75,13 @@ class webmasterApi
     }
 
 
+    /**
+     * webmasterApi true constructor.
+     *
+     * @param $accessToken string
+     *
+     * @return webmasterApi
+     */
     static function initApi($accessToken)
     {
         $wmApi = new self($accessToken);
@@ -104,6 +119,13 @@ class webmasterApi
     }
 
 
+    /**
+     * Get handler url for this resource
+     *
+     *
+     * @param $resource string
+     * @return string
+     */
     public function getApiUrl($resource)
     {
         $apiurl = $this->apiUrl;
@@ -122,7 +144,7 @@ class webmasterApi
      * @param $resource string Name of api resource
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
      *
-     * @return json
+     * @return object
      */
     protected function get($resource, $data=array())
     {
@@ -147,7 +169,7 @@ class webmasterApi
         $response = json_decode($response);
 
 
-        if (!is_object($response)) return $this->errorCritical('Unkonwn error in response: Not object given');
+        if (!is_object($response)) return $this->errorCritical('Unknown error in response: Not object given');
         return $response;
     }
 
@@ -184,10 +206,10 @@ class webmasterApi
         curl_close($ch);
 
 
-        if (!$response) return $this->errorCritical('Unkonwn error in curl');
+        if (!$response) return $this->errorCritical('Unknown error in curl');
         $response = json_decode($response);
 
-        if (!is_object($response)) return $this->errorCritical('Unkonwn error in curl');
+        if (!is_object($response)) return $this->errorCritical('Unknown error in curl');
         return $response;
     }
 
@@ -198,7 +220,7 @@ class webmasterApi
      *
      * @param $resource string Name of api resource
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
-     * @return false|JsonSerializable
+     * @return false|object
      */
     protected function delete($resource,$data=array())
     {
@@ -230,10 +252,10 @@ class webmasterApi
 
         if($httpCode=='204') return (object) array(true);
 
-        if (!$response) return $this->errorCritical('Unkonwn error in curl');
+        if (!$response) return $this->errorCritical('Unknown error in curl');
         $response = json_decode($response);
 
-        if (!is_object($response)) return $this->errorCritical('Unkonwn error in curl');
+        if (!is_object($response)) return $this->errorCritical('Unknown error in curl');
         return $response;
     }
 
@@ -282,7 +304,7 @@ class webmasterApi
     /**
      * Add new host
      *
-     * @param $url
+     * @param $url string
      * @return object Json
      */
     public function addHost($url)
@@ -295,8 +317,8 @@ class webmasterApi
     /**
      * Delete host from webmaster
      *
-     * @param $hostID
-     * @return Json
+     * @param $hostID string
+     * @return object
      */
     public function deleteHost($hostID)
     {
@@ -317,7 +339,12 @@ class webmasterApi
         return $ret;
     }
 
-
+    /**
+     * Check verification status of host
+     *
+     * @param $hostID string ID of host
+     * @return object
+     */
     public function checkVerification($hostID)
     {
         $ret = $this->get('/hosts/'.$hostID.'/verification/');
@@ -325,6 +352,12 @@ class webmasterApi
     }
 
 
+    /**
+     * Start verification of host
+     * @param $hostID string id of host
+     * @param $type type of verification (DNS|HTML_FILE|META_TAG|WHOIS): get it from applicable_verifiers method of checkVerification return
+     * @return false|object
+     */
     public function verifyHost($hostID, $type)
     {
 
@@ -336,7 +369,7 @@ class webmasterApi
     /**
      * Get host info
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
      *
      * @return object Json
      */
@@ -351,7 +384,7 @@ class webmasterApi
     /**
      * Get host summary info
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
      *
      * @return object Json
      */
@@ -365,7 +398,7 @@ class webmasterApi
     /**
      * Get host ownerss
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
      *
      * @return object Json
      */
@@ -379,7 +412,8 @@ class webmasterApi
     /**
      * Get host sitemaps
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
+     * @param $parentID string Id of parent sitemap
      *
      * @return object Json
      */
@@ -400,9 +434,10 @@ class webmasterApi
     /**
      * Get host user-added sitemaps
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
+     * @param $url string URL with new sitemap
      *
-     * @return object Json
+     * @return object
      */
     public function addSitemap($hostID, $url)
     {
@@ -415,7 +450,8 @@ class webmasterApi
     /**
      * Delete host user-added sitemap
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
+     * @param $sitemap_id string sitemap ID
      *
      * @return object Json
      */
@@ -431,7 +467,7 @@ class webmasterApi
     /**
      * Add sitemap
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
      *
      * @return object Json
      */
@@ -446,7 +482,7 @@ class webmasterApi
     /**
      * Get original texts from host
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
      * @param $offset int
      * @param $limit int
      *
@@ -463,17 +499,17 @@ class webmasterApi
     /**
      * Get Indexing history
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
      * @param $indexing_indicators array('DOWNLOADED','EXCLUDED','SEARCHABLE',...)
-     * @param $date_from time
-     * @param $date_to time
+     * @param $date_from int
+     * @param $date_to int
      *
      * @return object Json
      */
     public function getIndexingHistory($hostID,$indexing_indicators=array('DOWNLOADED','EXCLUDED','SEARCHABLE',),$date_from=null,$date_to=null)
     {
         if(!$date_from) $date_from = time()-1209600;
-        $date_to = time();
+        if(!$date_to) $date_to = time();
         $ret = $this->get('/hosts/'.$hostID."/indexing-history/",array("indexing_indicator"=>$indexing_indicators,'date_from'=>date(DATE_ISO8601,$date_from),'date_to'=>date(DATE_ISO8601,$date_to)));
 
         return $ret;
@@ -483,16 +519,16 @@ class webmasterApi
     /**
      * Get Tic history
      *
-     * @param $hostid string Host id in webmaster
-     * @param $date_from time
-     * @param $date_to time
+     * @param $hostID string Host id in webmaster
+     * @param $date_from int
+     * @param $date_to int
      *
      * @return object Json
      */
     public function getTicHistory($hostID,$date_from=null,$date_to=null)
     {
         if(!$date_from) $date_from = time()-1209600;
-        $date_to = time();
+        if(!$date_to) $date_to = time();
         $ret = $this->get('/hosts/'.$hostID."/tic-history/",array('date_from'=>date(DATE_ISO8601,$date_from),'date_to'=>date(DATE_ISO8601,$date_to)));
 
         return $ret;
@@ -503,8 +539,8 @@ class webmasterApi
     /**
      * Get TOP-500 popular queries from host
      *
-     * @param $hostid string Host id in webmaster
-     * @param $order_by TOTAL_CLICKS|TOTAL_SHOWS
+     * @param $hostID string Host id in webmaster
+     * @param $order_by string ordering: TOTAL_CLICKS|TOTAL_SHOWS
      * @param $indicators array('TOTAL_SHOWS','TOTAL_CLICKS','AVG_SHOW_POSITION','AVG_CLICK_POSITION')
      *
      * @return object Json
@@ -520,7 +556,7 @@ class webmasterApi
     /**
      * Add new original text to host
      *
-     * @param $hostid string Host id in webmaster
+     * @param $hostID string Host id in webmaster
      * @param $content string Text to add
      *
      * @return object Json
@@ -537,12 +573,12 @@ class webmasterApi
     /**
      * Delete existing original text from host
      *
-     * @param $hostid string Host id in webmaster
-     * @param $content string Text to add
+     * @param $hostID string Host id in webmaster
+     * @param $text_id string text ID to delete
      *
      * @return object Json
      */
-    public function deleteOriginalText($hostID,$text_id)
+    public function deleteOriginalText($hostID, $text_id)
     {
         $ret = $this->delete('/hosts/'.$hostID."/original-texts/".urlencode($text_id)."/");
 
@@ -574,7 +610,7 @@ class webmasterApi
      *
      * How to use:
      * 1. Go to https://oauth.yandex.ru/client/new
-     * 2. Type name of programm
+     * 2. Type name of program
      * 3. Select "Яндекс.Вебмастер" in rules section
      * 4. Select both checkboxes
      * 5. In Callback url write: "https://oauth.yandex.ru/verification_code"
@@ -611,11 +647,11 @@ class webmasterApi
         $response = curl_exec($ch);
         curl_close($ch);
 
-        if (!$response) die('Unkonwn error in curl');
+        if (!$response) die('Unknown error in curl');
 
         $response = json_decode($response);
 
-        if (!is_object($response)) die('Unkonwn error in curl');
+        if (!is_object($response)) die('Unknown error in curl');
 
 
         return $response;
