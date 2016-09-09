@@ -41,6 +41,15 @@ class webmasterApi
 
 
     /**
+     *
+     * User trigger errors
+     *
+     * @var boolean
+     */
+    public $triggerError = true;
+
+
+    /**
      * webmasterApi constructor.
      *
      * @param $accessToken string
@@ -100,8 +109,7 @@ class webmasterApi
         $apiurl = $this->apiUrl;
         if($resource!=='/user/')
         {
-
-            if(!$this->userID) return $this->errorWarning("Can't get hand ".$resource." without userID");
+            if(!$this->userID) return $this->errorCritical("Can't get hand ".$resource." without userID");
             $apiurl .= "/user/" . $this->userID;
         }
         return $apiurl.$resource;
@@ -244,23 +252,7 @@ class webmasterApi
         $this->lastError = $message;
         if($json)
         {
-            return (object) array('error_code'=>'CRITICAL_ERROR','error_message'=>$message);
-        }
-        return false;
-    }
-
-
-    /**
-     * Save error message and return false
-     *
-     * @param $message string Text of message
-     * @return false
-     */
-    private function errorWarning($message, $json = true)
-    {
-        $this->lastError = $message;
-        if($json)
-        {
+            if($this->triggerError) trigger_error($message,E_USER_ERROR);
             return (object) array('error_code'=>'CRITICAL_ERROR','error_message'=>$message);
         }
         return false;
