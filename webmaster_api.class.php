@@ -113,6 +113,10 @@ class webmasterApi
                 {
                     $new_data[] = urlencode($param)."=".urlencode($value_item);
                 }
+            } else
+            {
+                $this->errorCritical("Bad type of key ".$param.". Value must be string or array");
+                continue;
             }
         }
         return implode("&",$new_data);
@@ -275,6 +279,26 @@ class webmasterApi
         if($json)
         {
             if($this->triggerError) trigger_error($message,E_USER_ERROR);
+            return (object) array('error_code'=>'CRITICAL_ERROR','error_message'=>$message);
+        }
+        return false;
+    }
+
+
+    /**
+     * Save and log notice message and return false
+     *
+     * @param $message string Text of message
+     * @param $json boolean return false as json error
+     *
+     * @return false|object
+     */
+    private function errorWarning($message, $json = true)
+    {
+        $this->lastError = $message;
+        if($json)
+        {
+            if($this->triggerError) trigger_error($message,E_USER_NOTICE);
             return (object) array('error_code'=>'CRITICAL_ERROR','error_message'=>$message);
         }
         return false;
