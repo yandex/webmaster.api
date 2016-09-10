@@ -115,7 +115,7 @@ class webmasterApi
                 }
             } else
             {
-                $this->errorCritical("Bad type of key ".$param.". Value must be string or array");
+                $this->errorWarning("Bad type of key ".$param.". Value must be string or array");
                 continue;
             }
         }
