@@ -2,7 +2,7 @@
 /**
  * PHP-SDK to Yandex Webmaster Api
  *
- * Let me speak from my heart!
+ * Let me speak from my heart! please
  *
  *
  *
