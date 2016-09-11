@@ -13,6 +13,28 @@
 /**
  * Class webmaster_api
  *
+ * Класс является SDK к апи Яндекс.Вебмастера (api.webmaster.yandex.net).
+ * Обратите внимание: В случае возникновения ошибок в некоторых ситуациях кидается сообщение в стандартный поток ошибок PHP
+ *
+ * Во всех случаях - методы возвращают объект, и в случае возникнования ошибки у объекта есть непустое свойство error_message и error_code, на которые нужно смотреть.
+ * Так ведет себя API вебмастера, такое же поведение стараемся эмулировать в случае ошибок на уровне класса...
+ *
+ * Т.е., типичный вызов метода класса выглядит так:
+ *
+ * $hostSummary = $wmApi->getHostSummary($hostID);
+ * if(!empty($hostSummary->error_code))
+ * {
+ *      обрабатываем ситуацию с ошибкой
+ * } else
+ * {
+ *      обрабатываем ситуацию когда все хорошо
+ * }
+ *
+ *
+ * !! Обратите внимание!!
+ * Никогда не зашивайте в коде своих программ ID хостов, пользователей и других объектов: Яндекс.Вебмастер имеет право изменить этот формат и они перестанут работать.
+ * Тем более не пытайтесь самостоятельно генерировать эти ID - получайте их через функцию getHosts.
+ *
  * @author Dmitriy V. Popov <dima@subdomain.ru>
  * @copyright Yandex LLC
  */
@@ -21,6 +43,10 @@ class webmasterApi
 
     /**
      * Access token to Webmaster Api
+     *
+     * Свойство заполняется при инициализации объекта
+     *
+     *
      * @var string
      */
     private $accessToken = '';
@@ -52,6 +78,8 @@ class webmasterApi
      *
      * User trigger errors
      *
+     * Передавать ли возникающие ошибки в стандартный поток ошибок/
+     *
      * @var boolean
      */
     public $triggerError = true;
@@ -60,7 +88,10 @@ class webmasterApi
     /**
      * webmasterApi constructor.
      *
-     * @param $accessToken string
+     * Инициализирует класс работы с апи. Необходимо передать acceetoken, полученный на oauth-сервере Яндекс.
+     * Обратите внимание на статический метод getAccessToken(), которую можно использовать для его получения
+     *
+     * @param $accessToken string access token from Yandex ouath serverh
      */
     function __construct($accessToken)
     {
@@ -78,6 +109,8 @@ class webmasterApi
     /**
      * webmasterApi true constructor.
      *
+     * Коорректный способ создания объектов класса: При ошибке возвращает объект со стандартными ошибками.
+     *
      * @param $accessToken string
      *
      * @return webmasterApi
@@ -94,38 +127,10 @@ class webmasterApi
 
 
     /**
-     * Convert post-data array to string
-     *
-     * Make query string from post-data array
-     *
-     * @param $data array
-     * @return string
-     */
-    private function dataToString($data)
-    {
-        $new_data = array();
-        foreach ($data as $param=>$value)
-        {
-            if(is_string($value)) $new_data[] = urlencode($param)."=".urlencode($value);
-            elseif (is_array($value))
-            {
-                foreach ($value as $value_item)
-                {
-                    $new_data[] = urlencode($param)."=".urlencode($value_item);
-                }
-            } else
-            {
-                $this->errorWarning("Bad type of key ".$param.". Value must be string or array");
-                continue;
-            }
-        }
-        return implode("&",$new_data);
-    }
-
-
-    /**
      * Get handler url for this resource
      *
+     * Простоая обертка, возвращающая правильный путь к ручке API
+     * На самом деле все что она делает - дописывает /user/userID/, кроме, непосредственно, ручки /user/
      *
      * @param $resource string
      * @return string
@@ -145,6 +150,12 @@ class webmasterApi
     /**
      * Get request to hand
      *
+     * Выполнение простого GET-запроса к ручке API.
+     * В случае если переда массив $data - его значения будут записаны в запрос. Подробнее об этом массиве см. в описании
+     * метода dataToString
+     *
+     *
+     * @todo Добавить возможность работы с классом в отсутствии CURL
      * @param $resource string Name of api resource
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
      *
@@ -180,6 +191,8 @@ class webmasterApi
 
     /**
      * Post data to hand
+     *
+     * Выполнение POST-запроса к ручке API. Массив data передается в API как json-объект
      *
      * @param $resource string Name of api resource
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
@@ -221,6 +234,8 @@ class webmasterApi
 
     /**
      * Delete data from hand
+     *
+     * Выполнение DELETE запроса к  ручке API.
      *
      * @param $resource string Name of api resource
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
@@ -265,6 +280,61 @@ class webmasterApi
 
 
 
+
+    /**
+     *
+     * Set Curl Options
+     *
+     * Устанавливаем дефолтные необходимые параметры вызова curl
+     *
+     * @param $ch resource curl
+     * @return true
+     */
+    public function curlOpts(&$ch)
+    {
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        return true;
+    }
+
+
+
+
+    /**
+     * Convert post-data array to string
+     *
+     * простой метод, который преобразует массив в обычную query-строку.
+     * Ключи - названия get-переменных, value-значение. В случае если value - массив, в итоговую строку будет записана
+     * одна и та же переменная со множеством значений. Например, это актуально для вызова ручки /indexing-history/
+     * в которую можно передать множетсво индикаторов, которые мы хотим передать, несколько раз задав параметр запроса indexing_indicator
+     *
+     * @param $data array
+     * @return string
+     */
+    private function dataToString($data)
+    {
+        $new_data = array();
+        foreach ($data as $param=>$value)
+        {
+            if(is_string($value)||is_int($value)||is_float($value)) $new_data[] = urlencode($param)."=".urlencode($value);
+            elseif (is_array($value))
+            {
+                foreach ($value as $value_item)
+                {
+                    $new_data[] = urlencode($param)."=".urlencode($value_item);
+                }
+            } else
+            {
+                $this->errorWarning("Bad type of key ".$param.". Value must be string or array");
+                continue;
+            }
+        }
+        return implode("&",$new_data);
+    }
+
+
     /**
      * Save error message and return false
      *
@@ -307,8 +377,10 @@ class webmasterApi
 
 
     /**
-     *
      * Get User ID for current access token
+     *
+     * Узнать userID для текущего токена. Метод вызывается при инициализации класса, и не нужен "снаружи":
+     * Текущего пользователя можно получить через публичное свойство userID
      *
      * @return int|false
      */
@@ -328,6 +400,10 @@ class webmasterApi
     /**
      * Add new host
      *
+     * Добавление нового хоста. Параметром передается полный адрес хоста (лучше - с протоколом). Возвращается всегда объект,
+     * но, в случае ошибки - объект будет содержать свойства error_code и error_message
+     * В случае успеха - это будет объект со свойством host_id, содержащим ID хоста
+     *
      * @param $url string
      * @return object Json
      */
@@ -340,6 +416,8 @@ class webmasterApi
 
     /**
      * Delete host from webmaster
+     *
+     * Удаление хоста из вебмастера. hostID - ID хоста, полученный функцией getHosts
      *
      * @param $hostID string
      * @return object
@@ -354,6 +432,9 @@ class webmasterApi
     /**
      * Get host list
      *
+     * Получить список всех хостов добавленных в вебмастер для текущего пользователя.
+     * Возвращается массив объектов, каждый из которых содержит данные об отдельном хосте
+     *
      * @return object Json
      */
     public function getHosts()
@@ -365,6 +446,8 @@ class webmasterApi
 
     /**
      * Check verification status of host
+     *
+     * Проверяем статус верификации хоста
      *
      * @param $hostID string ID of host
      * @return object
@@ -378,6 +461,12 @@ class webmasterApi
 
     /**
      * Start verification of host
+     *
+     *
+     * Запуск процедуры верификации хоста. Обратите внимание, если запустить эту функцию для хоста, который находится
+     * в процесс верификации, или же уже верифицирован - метод вернет объект с ошибкой. Проверить статус верификации можно с помощью метода
+     * checkVerification
+     *
      * @param $hostID string id of host
      * @param $type type of verification (DNS|HTML_FILE|META_TAG|WHOIS): get it from applicable_verifiers method of checkVerification return
      * @return false|object
@@ -392,6 +481,8 @@ class webmasterApi
 
     /**
      * Get host info
+     *
+     * Получить подробную информацию об отдельном хосте
      *
      * @param $hostID string Host id in webmaster
      *
@@ -408,6 +499,8 @@ class webmasterApi
     /**
      * Get host summary info
      *
+     * Метод позволяет получить подробную информацию об отдельном хосте, включая его ключевые показатели индексирования.
+     *
      * @param $hostID string Host id in webmaster
      *
      * @return object Json
@@ -419,8 +512,11 @@ class webmasterApi
         return $ret;
     }
 
+
     /**
-     * Get host ownerss
+     * Get host owners
+     *
+     * Метод позволяет узнать всех владельцев хоста, и, для каждого из них узнать uid и метод верификации
      *
      * @param $hostID string Host id in webmaster
      *
@@ -435,6 +531,13 @@ class webmasterApi
 
     /**
      * Get host sitemaps
+     *
+     * Узнать список всех файлов sitemap, которые используются роботами при обходе данного хоста.
+     * Если передается параметр parentID, вернется список файлов, которые относятся к файлу sitemap index с этим id
+     * Если параметр не задан - вернутся все файлы, которые лежат в корне.
+     *
+     * Обратите внимание: Метод не возвращает те файлы, которые добавлены через Яндекс.Вебмастер но еще не используются
+     * при обходе. Для получения списка этих файлов используйте метод getHostUserSitemaps
      *
      * @param $hostID string Host id in webmaster
      * @param $parentID string Id of parent sitemap
@@ -455,8 +558,29 @@ class webmasterApi
         return $ret;
     }
 
+
+
+
     /**
-     * Get host user-added sitemaps
+     * Get list of user added sitemap files
+     *
+     * Метод позволяет получить список все файлов sitemap, добавленных через Яндекс.Вебмастер или API
+     *
+     * @param $hostID string Host id in webmaster
+     *
+     * @return object Json
+     */
+    public function getHostUserSitemaps($hostID)
+    {
+        $ret = $this->get('/hosts/'.$hostID."/user-added-sitemaps/");
+
+        return $ret;
+    }
+
+    /**
+     * Add new sitemap
+     *
+     * Добаление новой карты сайта
      *
      * @param $hostID string Host id in webmaster
      * @param $url string URL with new sitemap
@@ -474,6 +598,12 @@ class webmasterApi
     /**
      * Delete host user-added sitemap
      *
+     * Удаление существующего файла sitemap.
+     * Обратите внимание, что удалять можно только те файлы, которые были вручную добавлены через вебмастер или апи вебмастера
+     * (эти файлы можно получить через метод getHostUserSitemaps).
+     *
+     * Файлы добавленные через robots.txt удалить этим методом нельзя.
+     *
      * @param $hostID string Host id in webmaster
      * @param $sitemap_id string sitemap ID
      *
@@ -488,45 +618,21 @@ class webmasterApi
     }
 
 
-    /**
-     * Add sitemap
-     *
-     * @param $hostID string Host id in webmaster
-     *
-     * @return object Json
-     */
-    public function getHostUserSitemaps($hostID)
-    {
-        $ret = $this->get('/hosts/'.$hostID."/user-added-sitemaps/");
-
-        return $ret;
-    }
-
-
-    /**
-     * Get original texts from host
-     *
-     * @param $hostID string Host id in webmaster
-     * @param $offset int
-     * @param $limit int
-     *
-     * @return object Json
-     */
-    public function getOriginalTexts($hostID,$offset=0,$limit=100)
-    {
-        $ret = $this->get('/hosts/'.$hostID."/original-texts/",array("offset"=>$offset,"limit"=>$limit));
-
-        return $ret;
-    }
-
 
     /**
      * Get Indexing history
      *
+     * Получить историю индексирования хоста. В массиве $indexing_indicators можно передать список тех показателей, которые интересуют:
+     * DOWNLOADED  - загруженные страницы
+     * EXCLUDED - исключенные страницы
+     * SEARCHABLE - страницы в поиске
+     * По умолчанию - вытаскивается статистика за последний месяц. Период можно изменить передав соответствующие timestamps в параметрах
+     * $date_from и $date_to
+     *
      * @param $hostID string Host id in webmaster
      * @param $indexing_indicators array('DOWNLOADED','EXCLUDED','SEARCHABLE',...)
-     * @param $date_from int
-     * @param $date_to int
+     * @param $date_from int Date from in timestamp
+     * @param $date_to int Date to in timestamp
      *
      * @return object Json
      */
@@ -534,6 +640,9 @@ class webmasterApi
     {
         if(!$date_from) $date_from = time()-1209600;
         if(!$date_to) $date_to = time();
+        if(!intval($date_to)||!$date_to) return $this->errorCritical("Bad timestamp to \$date_to");
+        if(!intval($date_from)||!$date_from) return $this->errorCritical("Bad timestamp to \$date_from");
+        if($date_to<$date_from) return $this->errorCritical("Date to can't be smaller then Date from");
         $ret = $this->get('/hosts/'.$hostID."/indexing-history/",array("indexing_indicator"=>$indexing_indicators,'date_from'=>date(DATE_ISO8601,$date_from),'date_to'=>date(DATE_ISO8601,$date_to)));
 
         return $ret;
@@ -542,6 +651,10 @@ class webmasterApi
 
     /**
      * Get Tic history
+     *
+     * Получить историю Тиц
+     * По умолчанию - вытаскивается статистика за последний месяц. Период можно изменить передав соответствующие timestamps в параметрах
+     * $date_from и $date_to
      *
      * @param $hostID string Host id in webmaster
      * @param $date_from int
@@ -563,6 +676,8 @@ class webmasterApi
     /**
      * Get TOP-500 popular queries from host
      *
+     * Получить TOP-500 популярных запросов.
+     *
      * @param $hostID string Host id in webmaster
      * @param $order_by string ordering: TOTAL_CLICKS|TOTAL_SHOWS
      * @param $indicators array('TOTAL_SHOWS','TOTAL_CLICKS','AVG_SHOW_POSITION','AVG_CLICK_POSITION')
@@ -577,8 +692,34 @@ class webmasterApi
     }
 
 
+
+    /**
+     * Get original texts from host
+     *
+     * Получить список всех оригинальных текстов для заданного хоста.
+     *
+     * @param $hostID string Host id in webmaster
+     * @param $offset int
+     * @param $limit int
+     *
+     * @return object Json
+     */
+    public function getOriginalTexts($hostID,$offset=0,$limit=100)
+    {
+        $ret = $this->get('/hosts/'.$hostID."/original-texts/",array("offset"=>$offset,"limit"=>$limit));
+
+        return $ret;
+    }
+
+
+
+
     /**
      * Add new original text to host
+     *
+     * Добавить оригинальный текст.
+     * Здесь мы не проверяем размер текста, т.к. эти ошибки вернет само API.
+     * Теоретически требования к ОТ могут меняться, потому неправильно поддерживать это в клиентской библиотеке
      *
      * @param $hostID string Host id in webmaster
      * @param $content string Text to add
@@ -597,6 +738,8 @@ class webmasterApi
     /**
      * Delete existing original text from host
      *
+     * Удалить сущестующий ОТ для хоста
+     *
      * @param $hostID string Host id in webmaster
      * @param $text_id string text ID to delete
      *
@@ -610,22 +753,6 @@ class webmasterApi
         return $ret;
     }
 
-
-    /**
-     *
-     * Set Curl Options
-     *
-     * @param $ch resource curl
-     * @return true
-     */
-    public function curlOpts(&$ch)
-    {
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
-        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-        return true;
-    }
 
 
 
