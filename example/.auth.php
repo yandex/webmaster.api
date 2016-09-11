@@ -4,7 +4,8 @@ session_start();
 
 if(empty($client_id)||empty($client_secret))
 {
-    die('Please, enter your client id and secret code to conf.php file');
+    trigger_error('Please, enter your client id and secret code to config.php file', E_USER_ERROR);
+    die();
 }
 
 // Check access token

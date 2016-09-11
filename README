@@ -2,7 +2,7 @@ How to use example:
 
 1. Before use this code go to https://oauth.yandex.ru/client/new and add new client
 
-2. Add client ID and secret code in example/conf.php to use example
+2. Create file "example/config.php" by copy "config.example.php". Add client ID and secret code here to use example
 
 
 
@@ -18,7 +18,7 @@ How to use webmasterApi class:
   2.3 Use static method getAccessToken to get access token
   2.4 Create webmasterApi object with static method webmasterApi::initApi
 
-You can see example/auth.php to see how it working
+You can see example/.auth.php to see how it working
 
 4. Enjoy!
 

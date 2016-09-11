@@ -6,8 +6,8 @@
  */
 
 
-// Get confid
-require_once(dirname(__FILE__) . "/conf.php");
+// Initializtion: get config and primary classes
+require_once(dirname(__FILE__) . "/.init.php");
 
 // Init webmaster api with your access token
 $wmApi = webmasterApi::initApi($token);
