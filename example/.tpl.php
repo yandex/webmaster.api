@@ -4,10 +4,12 @@ class webmaster_api_example_tpl
 {
     public function header($title)
     {
-        ?><!DOCTYPE HTML PUBLIC  "-//W3C//DTD HTML 4.01//EN" "www.w3.org/TR/html4/strict.dtd">
+    header('Content-Type: text/html; charset=utf-8');
+?><!DOCTYPE HTML PUBLIC  "-//W3C//DTD HTML 4.01//EN" "www.w3.org/TR/html4/strict.dtd">
 <html>
         <head>
             <title><?=$title?></title>
+            <meta http-equiv="content-type" content="text/html; charset=UTF-8">
             <style>
                 .verified a
                 {
