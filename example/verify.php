@@ -45,7 +45,7 @@ if($verInfo->verification_state!=='NONE')
     Verification UIN: <?=$verInfo->verification_uin?><br />
     Last verification method: <?=$verInfo->verification_type?><br />
     Current status: <?=$verInfo->verification_state?><br />
-    <?if(isset($verInfo->fail_info->message)){echo "Last error: ".$verInfo->fail_info->message; }?>
+    <?php if(isset($verInfo->fail_info->message)){echo "Last error: ".$verInfo->fail_info->message; }?>
     <?php
 }
 
