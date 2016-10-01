@@ -40,7 +40,7 @@ webmaster_api_example_tpl::init()->header('Hosts added to your webmaster account
 ?>
 <a href="./new.php">add new host</a>
 <ul class="hostlist">
-<?
+<?php
 if(count($errors))
 {
     foreach ($errors as $error) {
@@ -48,7 +48,7 @@ if(count($errors))
         <div class="error">
             <?=$error->error_message?>
         </div>
-        <?
+        <?php
     }
 }
 if(is_array($res->hosts) && count($res->hosts)>0)
@@ -62,13 +62,13 @@ if(is_array($res->hosts) && count($res->hosts)>0)
             <a href="<?=$url?>"><?=$host->unicode_host_url?></a>  <a href="./index.php?host_id=<?=$host->host_id?>&delete=true"
                                                                         onclick="return window.confirm('Are you sure you want delete host &laquo;<?=$host->unicode_host_url?>&raquo;?');">[X]</a>
         </li>
-        <?
+        <?php
     }
 } else
 {
     ?>
     <div clasee="no_hosts">There are no hosts added to your account</div>
-    <?
+    <?php
 }
 ?>
 </ul>
