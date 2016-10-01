@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 if(empty($client_id)||empty($client_secret))
@@ -25,8 +24,6 @@ if(!isset($_SESSION['access_token']))
     {
         webmaster_api_example_tpl::redirect("https://oauth.yandex.ru/authorize?response_type=code&client_id=" . $client_id);
     }
-
 }
-
 
 $token = $_SESSION['access_token'];
