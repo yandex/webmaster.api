@@ -1,5 +1,5 @@
 <?php
-
+use yandex\webmaster\api\webmasterApi;
 session_start();
 
 if(empty($client_id)||empty($client_secret))

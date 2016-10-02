@@ -38,6 +38,8 @@
  * @author Dmitriy V. Popov <dima@subdomain.ru>
  * @copyright Yandex LLC
  */
+namespace yandex\webmaster\api;
+
 class webmasterApi
 {
 
