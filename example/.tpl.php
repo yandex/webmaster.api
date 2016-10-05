@@ -75,7 +75,7 @@ class webmaster_api_example_tpl
 ?>
         </body>
 </html>
-<?
+<?php
     }
 
 
