@@ -70,7 +70,7 @@ if($addError)
 
 <div class="hostinfo">
     <h2>Оригинальные тексты</h2>
-<?php
+    <?php
     if(!count($originalTexts->original_texts))
     {
         ?>

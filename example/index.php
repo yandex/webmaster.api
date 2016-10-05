@@ -42,7 +42,7 @@ webmaster_api_example_tpl::init()->header('Hosts added to your webmaster account
 ?>
 <a href="./new.php">add new host</a>
 <ul class="hostlist">
-<?php
+    <?php
 if(count($errors))
 {
     foreach ($errors as $error) {

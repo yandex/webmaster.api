@@ -70,7 +70,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
                 </th>
             </tr>
 
-        <?php
+            <?php
         foreach ($queries->queries as $query)
         {
             ?>
