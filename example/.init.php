@@ -1,4 +1,6 @@
 <?php
+use yandex\webmaster\api\webmasterApi;
+
 $cfg_path = realpath(dirname(__FILE__))."/config.php";
 
 if(!is_file($cfg_path))
