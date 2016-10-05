@@ -3,10 +3,6 @@
  * PHP-SDK to Yandex Webmaster Api
  *
  * Let me speak from my heart! please
- *
- *
- *
- *
  */
 
 
@@ -30,26 +26,25 @@
  *      обрабатываем ситуацию когда все хорошо
  * }
  *
- *
  * !! Обратите внимание!!
  * Никогда не зашивайте в коде своих программ ID хостов, пользователей и других объектов: Яндекс.Вебмастер имеет право изменить этот формат и они перестанут работать.
  * Тем более не пытайтесь самостоятельно генерировать эти ID - получайте их через функцию getHosts.
  *
  * @author Dmitriy V. Popov <dima@subdomain.ru>
+ * @author Vitaliy J. Rudnih <r@inbox.ru>
  * @copyright Yandex LLC
  */
 class webmasterApi
 {
-
     /**
      * Access token to Webmaster Api
      *
      * Свойство заполняется при инициализации объекта
      *
-     *
      * @var string
      */
     private $accessToken = '';
+
 
     /**
      * Url of webmaster API
@@ -57,6 +52,7 @@ class webmasterApi
      * @var string
      */
     private $apiUrl= 'https://api.webmaster.yandex.net/v3';
+
 
     /**
      * UserID in webmaster
@@ -75,7 +71,6 @@ class webmasterApi
 
 
     /**
-     *
      * User trigger errors
      *
      * Передавать ли возникающие ошибки в стандартный поток ошибок/
@@ -112,7 +107,6 @@ class webmasterApi
      * Коорректный способ создания объектов класса: При ошибке возвращает объект со стандартными ошибками.
      *
      * @param $accessToken string
-     *
      * @return webmasterApi
      */
     static function initApi($accessToken)
@@ -127,9 +121,97 @@ class webmasterApi
 
 
     /**
+     * Send HTTP request
+     *
+     * Функция отправки http(s) запросов.
+     *
+     * @param $url string
+     * @param $headers array
+     * @param $customRequest string
+     * @param $post boolean
+     * @param $postFields string or array
+     * @return object
+     */
+    static function makeRequest($url, $headers, $customRequest = null, $post = null, $postFields = null)
+    {
+        if (function_exists('curl_init'))
+        {
+            $ch = curl_init($url);
+            self::CurlOpts($ch);
+            if(isset($headers))
+            {
+                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            }
+            if(isset($customRequest))
+            {
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "".$customRequest."");
+            }
+            if($post){
+                curl_setopt($ch,CURLOPT_POST, 1);
+            }
+            if(isset($postFields)){
+                curl_setopt($ch,CURLOPT_POSTFIELDS,$postFields);
+            }
+            $response = curl_exec($ch);
+            $curl_error = curl_error($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if($httpCode=='204') return (object) array(true);
+            if (!$response) return self::errorCritical('Error in curl when get ['.$url.'] '.$curl_error);
+            $response = json_decode($response);
+            if (!is_object($response)) return self::errorCritical('Unknown error in response: Not object given');
+            return $response;
+        } else
+        {
+            $fp = fsockopen("ssl://".parse_url($url, PHP_URL_HOST), 443, $errno, $errstr, 10);
+            if (!$fp)
+            {
+                return self::errorCritical("$errstr($errno)");
+            } else
+            {
+                if(!isset($customRequest))
+                {
+                    $customRequest = ($post<>1) ? "GET" : "POST";
+                }
+                $request = $customRequest." /".preg_replace("/https:\/\/.*?(\/)/", "", $url)." HTTP/1.0\r\n";
+                $request .= "Host: ".parse_url($url, PHP_URL_HOST)."\r\n";
+                if(isset($headers))
+                {
+                    foreach ($headers as $value)
+                    {
+                        $request .= $value."\r\n";
+                    }
+                }
+                if($post)
+                {
+                    if(is_array($postFields))
+                    {
+                        $postFields = http_build_query($postFields);
+                    }
+                    $request .= "Content-Length: ".strlen($postFields)."\r\n";
+                    $request .= "\r\n";
+                    $request .= $postFields."\r\n\r\n";
+                } else
+                {
+                    $request .= "Connection: Close\r\n\r\n";
+                }
+                fputs($fp, $request);
+                while (!feof($fp))
+                {
+                    $result .= fgets ($fp,128);
+                }
+                fclose ($fp);
+                $result = explode("\r\n\r\n", $result, 2);
+                return json_decode($result[1]);
+            }
+        }
+    }
+
+
+    /**
      * Get handler url for this resource
      *
-     * Простоая обертка, возвращающая правильный путь к ручке API
+     * Простая обертка, возвращающая правильный путь к ручке API
      * На самом деле все что она делает - дописывает /user/userID/, кроме, непосредственно, ручки /user/
      *
      * @param $resource string
@@ -154,38 +236,16 @@ class webmasterApi
      * В случае если переда массив $data - его значения будут записаны в запрос. Подробнее об этом массиве см. в описании
      * метода dataToString
      *
-     *
-     * @todo Добавить возможность работы с классом в отсутствии CURL
      * @param $resource string Name of api resource
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
-     *
      * @return object
      */
     protected function get($resource, $data=array())
     {
         $apiurl = $this->getApiUrl($resource);
-
         $headers = array("Authorization: OAuth ".$this->accessToken,"Accept: application/json","Content-type: application/json");
-
         $url = $apiurl."?".$this->dataToString($data);
-
-        // Шлем запрос в курл
-        $ch = curl_init($url);
-
-        // основные опции curl
-        $this->curlOpts($ch);
-        // передаем заголовки
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        $response = curl_exec($ch);
-        $curl_error =curl_error($ch);
-        curl_close($ch);
-
-        if (!$response) return $this->errorCritical('Error in curl when get ['.$url.'] '.$curl_error);
-        $response = json_decode($response);
-
-
-        if (!is_object($response)) return $this->errorCritical('Unknown error in response: Not object given');
-        return $response;
+        return $this->makeRequest($url, $headers);
     }
 
 
@@ -201,35 +261,10 @@ class webmasterApi
     protected function post($resource,$data)
     {
         $url = $this->getApiUrl($resource);
-
         $headers = array("Authorization: OAuth ".$this->accessToken,"Accept: application/json","Content-type: application/json");
-
-
-
-
-
-        // Шлем запрос в курл
-        $ch = curl_init($url);
         $data_json = json_encode($data);
-
-        // основные опции курл
-        $this->curlOpts($ch);
-        // передаем заголовки
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch,CURLOPT_POST,1);
-        curl_setopt($ch,CURLOPT_POSTFIELDS,$data_json);
-        $response = curl_exec($ch);
-
-        curl_close($ch);
-
-
-        if (!$response) return $this->errorCritical('Unknown error in curl');
-        $response = json_decode($response);
-
-        if (!is_object($response)) return $this->errorCritical('Unknown error in curl');
-        return $response;
+        return $this->makeRequest($url, $headers, null, 1, $data_json);
     }
-
 
 
     /**
@@ -244,45 +279,13 @@ class webmasterApi
     protected function delete($resource,$data=array())
     {
         $headers = array("Authorization: OAuth ".$this->accessToken,"Accept: application/json","Content-type: application/json");
-
-
-
         $url = $this->getApiUrl($resource);
-
-
-        // Шлем запрос в курл
-        $ch = curl_init($url);
         $data_json = json_encode($data);
-
-
-        // основные опции курл
-        $this->curlOpts($ch);
-
-        // передаем заголовки
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-        curl_setopt($ch,CURLOPT_POSTFIELDS,$data_json);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-
-
-
-        if($httpCode=='204') return (object) array(true);
-
-        if (!$response) return $this->errorCritical('Unknown error in curl');
-        $response = json_decode($response);
-
-        if (!is_object($response)) return $this->errorCritical('Unknown error in curl');
-        return $response;
+        return $this->makeRequest($url, $headers, "DELETE", null, $data_json);
     }
 
 
-
-
     /**
-     *
      * Set Curl Options
      *
      * Устанавливаем дефолтные необходимые параметры вызова curl
@@ -290,7 +293,7 @@ class webmasterApi
      * @param $ch resource curl
      * @return true
      */
-    public function curlOpts(&$ch)
+    static function curlOpts(&$ch)
     {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
@@ -298,8 +301,6 @@ class webmasterApi
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
         return true;
     }
-
-
 
 
     /**
@@ -340,15 +341,13 @@ class webmasterApi
      *
      * @param $message string Text of message
      * @param $json boolean return false as json error
-     *
      * @return false|object
      */
-    private function errorCritical($message, $json = true)
+    static function errorCritical($message, $json = true)
     {
         $this->lastError = $message;
         if($json)
         {
-            if($this->triggerError) trigger_error($message,E_USER_ERROR);
             return (object) array('error_code'=>'CRITICAL_ERROR','error_message'=>$message);
         }
         return false;
@@ -360,7 +359,6 @@ class webmasterApi
      *
      * @param $message string Text of message
      * @param $json boolean return false as json error
-     *
      * @return false|object
      */
     private function errorWarning($message, $json = true)
@@ -373,7 +371,6 @@ class webmasterApi
         }
         return false;
     }
-
 
 
     /**
@@ -440,9 +437,9 @@ class webmasterApi
     public function getHosts()
     {
         $ret = $this->get('/hosts/');
-
         return $ret;
     }
+
 
     /**
      * Check verification status of host
@@ -462,7 +459,6 @@ class webmasterApi
     /**
      * Start verification of host
      *
-     *
      * Запуск процедуры верификации хоста. Обратите внимание, если запустить эту функцию для хоста, который находится
      * в процесс верификации, или же уже верифицирован - метод вернет объект с ошибкой. Проверить статус верификации можно с помощью метода
      * checkVerification
@@ -473,7 +469,6 @@ class webmasterApi
      */
     public function verifyHost($hostID, $type)
     {
-
         $ret = $this->post('/hosts/'.$hostID.'/verification/?verification_type='.$type,array());
         return $ret;
     }
@@ -485,13 +480,11 @@ class webmasterApi
      * Получить подробную информацию об отдельном хосте
      *
      * @param $hostID string Host id in webmaster
-     *
      * @return object Json
      */
     public function getHostInfo($hostID)
     {
         $ret = $this->get('/hosts/'.$hostID."/");
-
         return $ret;
     }
 
@@ -502,13 +495,11 @@ class webmasterApi
      * Метод позволяет получить подробную информацию об отдельном хосте, включая его ключевые показатели индексирования.
      *
      * @param $hostID string Host id in webmaster
-     *
      * @return object Json
      */
     public function getHostSummary($hostID)
     {
         $ret = $this->get('/hosts/'.$hostID."/summary/");
-
         return $ret;
     }
 
@@ -519,15 +510,14 @@ class webmasterApi
      * Метод позволяет узнать всех владельцев хоста, и, для каждого из них узнать uid и метод верификации
      *
      * @param $hostID string Host id in webmaster
-     *
      * @return object Json
      */
     public function getHostOwners($hostID)
     {
         $ret = $this->get('/hosts/'.$hostID."/owners/");
-
         return $ret;
     }
+
 
     /**
      * Get host sitemaps
@@ -541,24 +531,18 @@ class webmasterApi
      *
      * @param $hostID string Host id in webmaster
      * @param $parentID string Id of parent sitemap
-     *
      * @return object Json
      */
     public function getHostSitemaps($hostID, $parentID=null)
     {
-
         $get = array();
         if($parentID)
         {
             $get['parent_id']=$parentID;
         }
-
         $ret = $this->get('/hosts/'.$hostID."/sitemaps/",$get);
-
         return $ret;
     }
-
-
 
 
     /**
@@ -567,15 +551,14 @@ class webmasterApi
      * Метод позволяет получить список все файлов sitemap, добавленных через Яндекс.Вебмастер или API
      *
      * @param $hostID string Host id in webmaster
-     *
      * @return object Json
      */
     public function getHostUserSitemaps($hostID)
     {
         $ret = $this->get('/hosts/'.$hostID."/user-added-sitemaps/");
-
         return $ret;
     }
+
 
     /**
      * Add new sitemap
@@ -584,16 +567,14 @@ class webmasterApi
      *
      * @param $hostID string Host id in webmaster
      * @param $url string URL with new sitemap
-     *
      * @return object
      */
     public function addSitemap($hostID, $url)
     {
-
         $ret = $this->post('/hosts/'.$hostID."/user-added-sitemaps/",array("url"=>$url));
-
         return $ret;
     }
+
 
     /**
      * Delete host user-added sitemap
@@ -606,17 +587,13 @@ class webmasterApi
      *
      * @param $hostID string Host id in webmaster
      * @param $sitemap_id string sitemap ID
-     *
      * @return object Json
      */
     public function deleteSitemap($hostID, $sitemap_id)
     {
-
         $ret = $this->delete('/hosts/'.$hostID."/user-added-sitemaps/".$sitemap_id."/");
-
         return $ret;
     }
-
 
 
     /**
@@ -633,7 +610,6 @@ class webmasterApi
      * @param $indexing_indicators array('DOWNLOADED','EXCLUDED','SEARCHABLE',...)
      * @param $date_from int Date from in timestamp
      * @param $date_to int Date to in timestamp
-     *
      * @return object Json
      */
     public function getIndexingHistory($hostID,$indexing_indicators=array('DOWNLOADED','EXCLUDED','SEARCHABLE',),$date_from=null,$date_to=null)
@@ -644,7 +620,6 @@ class webmasterApi
         if(!intval($date_from)||!$date_from) return $this->errorCritical("Bad timestamp to \$date_from");
         if($date_to<$date_from) return $this->errorCritical("Date to can't be smaller then Date from");
         $ret = $this->get('/hosts/'.$hostID."/indexing-history/",array("indexing_indicator"=>$indexing_indicators,'date_from'=>date(DATE_ISO8601,$date_from),'date_to'=>date(DATE_ISO8601,$date_to)));
-
         return $ret;
     }
 
@@ -659,7 +634,6 @@ class webmasterApi
      * @param $hostID string Host id in webmaster
      * @param $date_from int
      * @param $date_to int
-     *
      * @return object Json
      */
     public function getTicHistory($hostID,$date_from=null,$date_to=null)
@@ -667,10 +641,8 @@ class webmasterApi
         if(!$date_from) $date_from = time()-1209600;
         if(!$date_to) $date_to = time();
         $ret = $this->get('/hosts/'.$hostID."/tic-history/",array('date_from'=>date(DATE_ISO8601,$date_from),'date_to'=>date(DATE_ISO8601,$date_to)));
-
         return $ret;
     }
-
 
 
     /**
@@ -681,16 +653,13 @@ class webmasterApi
      * @param $hostID string Host id in webmaster
      * @param $order_by string ordering: TOTAL_CLICKS|TOTAL_SHOWS
      * @param $indicators array('TOTAL_SHOWS','TOTAL_CLICKS','AVG_SHOW_POSITION','AVG_CLICK_POSITION')
-     *
      * @return object Json
      */
     public function getPopularQueries($hostID,$order_by='TOTAL_CLICKS',$indicators=array())
     {
         $ret = $this->get('/hosts/'.$hostID."/search-queries/popular/",array("order_by"=>$order_by,"query_indicator"=>$indicators));
-
         return $ret;
     }
-
 
 
     /**
@@ -701,17 +670,13 @@ class webmasterApi
      * @param $hostID string Host id in webmaster
      * @param $offset int
      * @param $limit int
-     *
      * @return object Json
      */
     public function getOriginalTexts($hostID,$offset=0,$limit=100)
     {
         $ret = $this->get('/hosts/'.$hostID."/original-texts/",array("offset"=>$offset,"limit"=>$limit));
-
         return $ret;
     }
-
-
 
 
     /**
@@ -723,16 +688,13 @@ class webmasterApi
      *
      * @param $hostID string Host id in webmaster
      * @param $content string Text to add
-     *
      * @return object Json
      */
     public function addOriginalText($hostID,$content)
     {
         $ret = $this->post('/hosts/'.$hostID."/original-texts/",array("content"=>$content));
-
         return $ret;
     }
-
 
 
     /**
@@ -742,25 +704,19 @@ class webmasterApi
      *
      * @param $hostID string Host id in webmaster
      * @param $text_id string text ID to delete
-     *
      * @return object Json
      */
     public function deleteOriginalText($hostID, $text_id)
     {
         $ret = $this->delete('/hosts/'.$hostID."/original-texts/".urlencode($text_id)."/");
-
-
         return $ret;
     }
-
 
 
     public function getExternalLinks($hostID, $offset = 0, $limit = 100)
     {
         return $this->get('/hosts/'.$hostID.'/links/external/samples/',array("offset"=>$offset,"limit"=>$limit));
     }
-
-
 
 
     /**
@@ -780,10 +736,7 @@ class webmasterApi
      * 11. Remember it
      * 12. Enjoy!
      *
-     *
      * @deprecated This function is deprecated. It's only for debug
-     *
-     *
      * @param $code
      * @param $client_id
      * @param $client_secret
@@ -792,30 +745,6 @@ class webmasterApi
     static function getAccessToken($code, $client_id, $client_secret)
     {
         $postData = array("grant_type" => "authorization_code", "code" => $code, "client_id" => $client_id, "client_secret" => $client_secret);
-
-        $ch = curl_init('https://oauth.yandex.ru/token');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
-        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-
-
-
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        if (!$response) die('Unknown error in curl');
-
-        $response = json_decode($response);
-
-        if (!is_object($response)) die('Unknown error in curl');
-
-
-        return $response;
+        return self::MakeRequest("https://oauth.yandex.ru/token", null, null, 1, $postData);
     }
 }
-
-
-
-

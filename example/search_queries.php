@@ -38,14 +38,14 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
 
 <div class="hostinfo">
     <h2>Популярные запросы</h2>
-    <?
+    <?php
     if(!count($queries->queries))
     {
         ?>
         <span class="hostinfo_item">
             У вас нет показов в поиске
         </span>
-        <?
+        <?php
     } else
     {
         ?>
@@ -68,7 +68,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
                 </th>
             </tr>
 
-        <?
+        <?php
         foreach ($queries->queries as $query)
         {
             ?>
@@ -89,12 +89,11 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
                     <?=(isset($query->indicators->AVG_CLICK_POSITION))?round($query->indicators->AVG_SHOW_POSITION,2):'n/a';?>
                 </th>
             </tr>
-            <?
+            <?php
         }
         ?>
         </table>
-        <?
+        <?php
     }
     ?>
 </div>
-

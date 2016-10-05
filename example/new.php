@@ -55,11 +55,11 @@ if(count($postErrors))
             <li>
                 <?=htmlentities($error)?>
             </li>
-            <?
+            <?php
         }
         ?>
     </ul>
-    <?
+    <?php
 }
 ?>
 <form action="./new.php" method="post">
