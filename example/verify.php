@@ -45,8 +45,8 @@ if($verInfo->verification_state!=='NONE')
     Verification UIN: <?=$verInfo->verification_uin?><br />
     Last verification method: <?=$verInfo->verification_type?><br />
     Current status: <?=$verInfo->verification_state?><br />
-    <?php if(isset($verInfo->fail_info->message)){echo "Last error: ".$verInfo->fail_info->message; }?>
-    <?php
+    <?if(isset($verInfo->fail_info->message)){echo "Last error: ".$verInfo->fail_info->message; }?>
+    <?
 }
 
 
@@ -54,16 +54,16 @@ if($verInfo->verification_state==='IN_PROGRESS')
 {
     ?>
     Please, wait some time to end of validation! <br> <a href="javascript:location.reload(false)">reload page</a>
-    <?php
+    <?
 }elseif($verInfo->verification_state==='VERIFIED')
 {
     ?>
     Site currently verified
-    <?php
+    <?
 }else {
     ?>
     <div>Verify host by:</div>
-    <?php
+    <?
     foreach ($verInfo->applicable_verifiers as $verifier) {
         echo '<a href="verify.php?host_id=' . $hostID . '&use_method=' . $verifier . '" style="display:block; float:left; padding-right:10px;">';
         switch ($verifier) {
@@ -84,6 +84,6 @@ if($verInfo->verification_state==='IN_PROGRESS')
     }
     ?>
     <a href="verify.php?method="></a>
-    <?php
+    <?
 }
 ?>

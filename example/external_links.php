@@ -39,7 +39,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | External L
 
 <div class="hostinfo">
     <h2>Внешние ссылки</h2>
-<?php
+<?
     foreach ($externalLinks->links as $link)
     {
         ?>
@@ -48,7 +48,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | External L
             на <?=$link->destination_url?>
             (<small><?=date('d.m.Y',strtotime($link->source_last_access_date))?></small>)<br>
         </span>
-        <?php
+        <?
     }
 
 
@@ -56,15 +56,16 @@ if ($offset>0)
 {
     ?>
     <a href="./external_links.php?host_id=<?=$hostID?>&offset=<?=(($offset-$limit)<0?0:($offset-$limit));?>">Показать предудщие <?=$limit?> ссылок</a>
-    <?php
+    <?
 }
 
 if (count($externalLinks->links)==$limit)
 {
     ?>
     <a href="./external_links.php?host_id=<?=$hostID?>&offset=<?=$offset+$limit?>">Показать следующие <?=$limit?> ссылок</a>
-    <?php
+    <?
 }
 ?>
 
 </div>
+
