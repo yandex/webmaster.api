@@ -41,7 +41,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
 <a href="host.php?host_id=<?=$hostID?>">Общая информация</a>
 
 <div class="hostinfo">
-    <?php
+    <?
     if(isset($history->indicators->DOWNLOADED))
     {
         ?>
@@ -49,35 +49,35 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
         <span class="hostinfo_item">
             <table border="1">
                 <tr>
-                <?php
+                <?
                 foreach ($history->indicators->DOWNLOADED as $pages)
                 {
                     ?>
                     <th>
                                 <?=date('Y-m-d',strtotime($pages->date))?>
                     </th>
-                    <?php
+                    <?
                 }
                 ?>
                 </tr>
                 <tr>
-                <?php
+                <?
                 foreach ($history->indicators->DOWNLOADED as $pages)
                 {
                     ?>
                     <td>
                         <?=$pages->value?>
                     </td>
-                    <?php
+                    <?
                 }
                 ?>
                 </tr>
             </table>
         </span>
-        <?php
+        <?
     }
     ?>
-    <?php
+    <?
     if(isset($history->indicators->EXCLUDED))
     {
         ?>
@@ -85,35 +85,35 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
         <span class="hostinfo_item">
             <table border="1">
                 <tr>
-                <?php
+                <?
                 foreach ($history->indicators->EXCLUDED as $pages)
                 {
                     ?>
                     <th>
                                 <?=date('Y-m-d',strtotime($pages->date))?>
                             </th>
-                    <?php
+                    <?
                 }
                 ?>
                 </tr>
                 <tr>
-                <?php
+                <?
                 foreach ($history->indicators->EXCLUDED as $pages)
                 {
                     ?>
                     <td>
                         <?=$pages->value?>
                     </td>
-                    <?php
+                    <?
                 }
                 ?>
                 </tr>
             </table>
         </span>
-        <?php
+        <?
     }
     ?>
-    <?php
+    <?
     if(isset($history->indicators->DOWNLOADED))
     {
         ?>
@@ -121,35 +121,35 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
         <span class="hostinfo_item">
             <table border="1">
                 <tr>
-                <?php
+                <?
                 foreach ($history->indicators->SEARCHABLE as $pages)
                 {
                     ?>
                     <th>
                                 <?=date('Y-m-d',strtotime($pages->date))?>
                             </th>
-                    <?php
+                    <?
                 }
                 ?>
                 </tr>
                 <tr>
-                <?php
+                <?
                 foreach ($history->indicators->SEARCHABLE as $pages)
                 {
                     ?>
                     <td>
                         <?=$pages->value?>
                     </td>
-                    <?php
+                    <?
                 }
                 ?>
                 </tr>
             </table>
         </span>
-        <?php
+        <?
     }
     ?>
-    <?php
+    <?
     $tic_history = $wmApi->getTicHistory($hostID);
     if(isset($tic_history->points))
     {
@@ -158,32 +158,33 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
         <span class="hostinfo_item">
             <table border="1">
                 <tr>
-                <?php
+                <?
                 foreach ($tic_history->points as $pages)
                 {
                     ?>
                     <th>
                                 <?=date('Y-m-d',strtotime($pages->date))?>
                             </th>
-                    <?php
+                    <?
                 }
                 ?>
                 </tr>
                 <tr>
-                <?php
+                <?
                 foreach ($tic_history->points as $pages)
                 {
                     ?>
                     <td>
                         <?=$pages->value?>
                     </td>
-                    <?php
+                    <?
                 }
                 ?>
                 </tr>
             </table>
         </span>
-        <?php
+        <?
     }
     ?>
 </div>
+

@@ -58,16 +58,16 @@ if($verInfo->verification_state==='IN_PROGRESS')
 {
     ?>
     Please, wait some time to end of validation! <br> <a href="javascript:location.reload(false)">reload page</a>
-    <?php
+    <?
 }elseif($verInfo->verification_state==='VERIFIED')
 {
     ?>
     Site currently verified
-    <?php
+    <?
 }else {
     ?>
     <div>Verify host by:</div>
-    <?php
+    <?
     foreach ($verInfo->applicable_verifiers as $verifier) {
         echo '<a href="verify.php?host_id=' . $hostID . '&use_method=' . $verifier . '" style="display:block; float:left; padding-right:10px;">';
         switch ($verifier) {
@@ -88,6 +88,6 @@ if($verInfo->verification_state==='IN_PROGRESS')
     }
     ?>
     <a href="verify.php?method="></a>
-    <?php
+    <?
 }
 ?>

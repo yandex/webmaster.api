@@ -1,6 +1,6 @@
 <?php
 
-require_once('./src/webmasterApi.php');
+require_once(realpath(dirname(__FILE__)) . '/src/webmasterApi.php');
 
 /**
  * @deprecated

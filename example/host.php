@@ -79,7 +79,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Info about
 
 <div class="hostinfo">
     <h2>Владельцы хоста:</h2>
-    <?php
+    <?
     $owners = $wmApi->getHostOwners($hostID);
     foreach ($owners->users as $user)
     {
@@ -87,7 +87,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Info about
         <span class="hostinfo_item">
             <?=$user->user_login?>. Верефицирован методом <?=$user->verification_type?> <?=date('d.m.Y',strtotime($user->verification_date))?> c UIN <?=$user->verification_uin?>
             </span>
-        <?php
+        <?
     }
     ?>
 </div>
@@ -95,21 +95,21 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Info about
 
 <div class="hostinfo">
     <h2>Файлы sitemap:</h2>
-    <?php
+    <?
     $sitemaps = $wmApi->getHostSitemaps($hostID);
 
     if(!count($sitemaps->sitemaps))
     {
         ?>
         <span class="">Нет ни одного файла sitemap</span>
-        <?php
+        <?
     }
     foreach ($sitemaps->sitemaps as $sitemap)
     {
         ?>
         <span class="hostinfo_item">
             <?=$sitemap->sitemap_url?>. Страниц: <?=$sitemap->urls_count?>. Ошибок: <?=$sitemap->errors_count?>.
-            <?php
+            <?
             if(isset($sitemap->last_access_date)) echo "Загружен ".date('d.m.Y',strtotime($sitemap->last_access_date));
             else echo "Не загружен";
 
@@ -124,12 +124,12 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Info about
                             <?=$child_map->sitemap_url?>. Страниц: <?=$child_map->urls_count?>. Ошибок: <?=$child_map->errors_count?>.
             Загружен <?=date('d.m.Y',strtotime($child_map->last_access_date))?>
                         </span>
-                    <?php
+                    <?
                 }
             }
             ?>
             </span>
-        <?php
+        <?
     }
     ?>
 </div>
@@ -138,25 +138,25 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Info about
 <a name="user_added_sitemaps"></a>
 <div class="hostinfo">
     <h2>Файлы sitemap, добавленные пользователем:</h2>
-    <?php
+    <?
     if(count($sitemap_errors))
     {
         foreach ($sitemap_errors as $error)
         {
             ?>
             <div class="error"><?=$error?></div>
-            <?php
+            <?
         }
     }
     ?>
-    <?php
+    <?
     $user_sitemaps = $wmApi->getHostUserSitemaps($hostID);
 
     if(!count($user_sitemaps->sitemaps))
     {
         ?>
         <span class="">Нет ни одного файла sitemap</span>
-        <?php
+        <?
     }
 
     foreach ($user_sitemaps->sitemaps as $sitemap)
@@ -168,7 +168,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Info about
             </span>
 
 
-        <?php
+        <?
     }
     ?>
     <form action="./host.php?host_id=<?=$hostID?>&add_sitemap=true#user_added_sitemaps" method="post">
