@@ -9,6 +9,8 @@
 // Initializtion: get config and primary classes
 require_once(dirname(__FILE__) . "/.init.php");
 
+use yandex\webmaster\api\webmasterApi;
+
 // Init webmaster api with your access token
 $wmApi = webmasterApi::initApi($token);
 if(isset($wmApi->error_message)) die($wmApi->error_message);
@@ -68,7 +70,7 @@ if($addError)
 
 <div class="hostinfo">
     <h2>Оригинальные тексты</h2>
-<?
+    <?php
     if(!count($originalTexts->original_texts))
     {
         ?>

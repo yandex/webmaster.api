@@ -9,6 +9,8 @@
 // Initializtion: get config and primary classes
 require_once(dirname(__FILE__) . "/.init.php");
 
+use yandex\webmaster\api\webmasterApi;
+
 // Init webmaster api with your access token
 $wmApi = webmasterApi::initApi($token);
 if(isset($wmApi->error_message)) die($wmApi->error_message);
@@ -68,7 +70,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Popular Qu
                 </th>
             </tr>
 
-        <?
+            <?php
         foreach ($queries->queries as $query)
         {
             ?>

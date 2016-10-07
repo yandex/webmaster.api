@@ -9,6 +9,8 @@
 // Initializtion: get config and primary classes
 require_once(dirname(__FILE__) . "/.init.php");
 
+use yandex\webmaster\api\webmasterApi;
+
 // Init webmaster api with your access token
 $wmApi = webmasterApi::initApi($token);
 if(isset($wmApi->error_message)) die($wmApi->error_message);
@@ -60,7 +62,7 @@ webmaster_api_example_tpl::init()->header($info->unicode_host_url.' | Info about
 <a href="original_texts.php?host_id=<?=$hostID?>">Оригинальные тексты</a>
 <a href="search_queries.php?host_id=<?=$hostID?>">Популярные запросы</a>
 <a href="history.php?host_id=<?=$hostID?>">История</a>
-<a href="external_links.php?host_id=<?=$hostID?>">Внешние ссылки</a>
+<a href="external_links.php?host_id=<?= $hostID ?>">Внешние ссылки</a>
 <div class="hostinfo">
     <h2>Общая информация</h2>
     <span class="hostinfo_item">

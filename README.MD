@@ -1,12 +1,45 @@
-How to use example:
+# Yandex Webmaster Api v3 Library
+
+- [Installation](#installation)
+    - [Composer](#composer)
+    - [Manual](#manual)
+- [Usage](#usage)
+
+## Installation
+
+### Composer
+
+add into composer.json
+```js
+{
+    "require": {
+        ...
+        "yandex/webmaster.api": "dev-master"
+        ...
+    }
+}
+```
+
+or
+
+```
+php composer.phar require yandex/webmaster.api "dev-master"
+```
+
+### Manual
+
+Clone repository and require webmasterApi.php
+
+## Usage
+
+###How to use example:
 
 1. Before use this code go to https://oauth.yandex.ru/client/new and add new client
 
 2. Create file "example/config.php" by copy "config.example.php". Add client ID and secret code here to use example
 
 
-
-How to use webmasterApi class:
+###How to use webmasterApi class:
 
 1. Add client on https://oauth.yandex.ru/client/new page. Don't forget to set up correct return url
 
@@ -14,7 +47,7 @@ How to use webmasterApi class:
 
 3. If you want to get correct Access Token, you must create authorization code.
   2.1 Read doc on https://tech.yandex.ru/oauth/doc/dg/reference/web-client-docpage/
-  2.2 Locate your client to https://oauth.yandex.ru/authorize?response_type=code&client_id=[yourclient id]
+  2.2 Locate your client to https://oauth.yandex.ru/authorize?response_type=code&client_id=[yourclient_id]
   2.3 Use static method getAccessToken to get access token
   2.4 Create webmasterApi object with static method webmasterApi::initApi
 
