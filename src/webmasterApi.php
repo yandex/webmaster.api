@@ -58,7 +58,7 @@ class webmasterApi
      *
      * @var string
      */
-    private $apiUrl= 'https://api.webmaster.yandex.net/v3';
+    private $apiUrl = 'https://api.webmaster.yandex.net/v3';
 
     /**
      * UserID in webmaster
@@ -99,8 +99,7 @@ class webmasterApi
     {
         $this->accessToken = $accessToken;
         $this->userID = $this->getUserID();
-        if(isset($this->userID->error_message))
-        {
+        if (isset($this->userID->error_message)) {
             $this->errorCritical($this->userID->error_message);
             $this->userID = null;
         }
@@ -120,9 +119,8 @@ class webmasterApi
     static function initApi($accessToken)
     {
         $wmApi = new self($accessToken);
-        if(!empty($wmApi->lastError))
-        {
-            return (object) array('error_message'=>$wmApi->lastError);
+        if (!empty($wmApi->lastError)) {
+            return (object)array('error_message' => $wmApi->lastError);
         }
         return $wmApi;
     }
@@ -140,12 +138,11 @@ class webmasterApi
     public function getApiUrl($resource)
     {
         $apiurl = $this->apiUrl;
-        if($resource!=='/user/')
-        {
-            if(!$this->userID) return $this->errorCritical("Can't get hand ".$resource." without userID");
+        if ($resource !== '/user/') {
+            if (!$this->userID) return $this->errorCritical("Can't get hand " . $resource . " without userID");
             $apiurl .= "/user/" . $this->userID;
         }
-        return $apiurl.$resource;
+        return $apiurl . $resource;
     }
 
 
@@ -157,33 +154,50 @@ class webmasterApi
      * метода dataToString
      *
      *
-     * @todo Добавить возможность работы с классом в отсутствии CURL
      * @param $resource string Name of api resource
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
      *
      * @return object
      */
-    protected function get($resource, $data=array())
+    protected function get($resource, $data = array())
     {
         $apiurl = $this->getApiUrl($resource);
 
-        $headers = array("Authorization: OAuth ".$this->accessToken,"Accept: application/json","Content-type: application/json");
+        $headers = array("Authorization: OAuth " . $this->accessToken, "Accept: application/json", "Content-type: application/json");
 
-        $url = $apiurl."?".$this->dataToString($data);
+        $url = $apiurl . "?" . $this->dataToString($data);
 
-        // Шлем запрос в курл
-        $ch = curl_init($url);
+        $allow_url_fopen = ini_get('allow_url_fopen');
+        if (function_exists('curl_init')) {
+            // Шлем запрос в курл
+            $ch = curl_init($url);
+            // основные опции curl
+            $this->curlOpts($ch);
+            // передаем заголовки
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            $response = curl_exec($ch);
+            $curl_error = curl_error($ch);
+            curl_close($ch);
+        } elseif (!empty($allow_url_fopen)) {
+            $opts = array(
+                'http' => array(
+                    'method' => 'GET',
+                    'header' => $headers
+                )
+            );
 
-        // основные опции curl
-        $this->curlOpts($ch);
-        // передаем заголовки
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        $response = curl_exec($ch);
-        $curl_error = curl_error($ch);
-        curl_close($ch);
+            # создание контекста потока
+            $context = stream_context_create($opts);
+            # отправляем запрос и получаем ответ от сервера
+            $response = @file_get_contents($url, 0, $context);
+
+        } else {
+            return $this->errorCritical('CURL not installed & file_get_contents disabled');
+        }
+
 
         if (!$response) return $this->errorCritical('Error in curl when get [' . $url . '] ' . $curl_error);
-        $response = json_decode($response);
+        $response = json_decode($response, false, 512, JSON_BIGINT_AS_STRING);
 
 
         if (!is_object($response)) return $this->errorCritical('Unknown error in response: Not object given');
@@ -200,27 +214,44 @@ class webmasterApi
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
      * @return false|JsonSerializable
      */
-    protected function post($resource,$data)
+    protected function post($resource, $data)
     {
         $url = $this->getApiUrl($resource);
 
-        $headers = array("Authorization: OAuth ".$this->accessToken,"Accept: application/json","Content-type: application/json");
-
-
-        // Шлем запрос в курл
-        $ch = curl_init($url);
+        $headers = array("Authorization: OAuth " . $this->accessToken, "Accept: application/json", "Content-type: application/json");
         $data_json = json_encode($data);
 
-        // основные опции курл
-        $this->curlOpts($ch);
-        // передаем заголовки
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
-        $response = curl_exec($ch);
+        $allow_url_fopen = ini_get('allow_url_fopen');
+        if (function_exists('curl_init')) {
+            // Шлем запрос в курл
+            $ch = curl_init($url);
 
-        curl_close($ch);
+            // основные опции курл
+            $this->curlOpts($ch);
+            // передаем заголовки
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
+            $response = curl_exec($ch);
 
+            curl_close($ch);
+        } elseif (!empty($allow_url_fopen)) {
+            $opts = array(
+                'http' => array(
+                    'method' => 'POST',
+                    'content' => $data_json,
+                    'header' => $headers
+                )
+            );
+
+            # создание контекста потока
+            $context = stream_context_create($opts);
+            # отправляем запрос и получаем ответ от сервера
+            $response = @file_get_contents($url, 0, $context);
+
+        } else {
+            return $this->errorCritical('CURL not installed & file_get_contents disabled');
+        }
 
         if (!$response) return $this->errorCritical('Unknown error in curl');
         $response = json_decode($response);
@@ -228,7 +259,6 @@ class webmasterApi
         if (!is_object($response)) return $this->errorCritical('Unknown error in curl');
         return $response;
     }
-
 
 
     /**
@@ -240,32 +270,50 @@ class webmasterApi
      * @param $data array Array with request params (useful to CURLOPT_POSTFIELDS: http://php.net/curl_setopt )
      * @return false|object
      */
-    protected function delete($resource,$data=array())
+    protected function delete($resource, $data = array())
     {
-        $headers = array("Authorization: OAuth ".$this->accessToken,"Accept: application/json","Content-type: application/json");
+        $headers = array("Authorization: OAuth " . $this->accessToken, "Accept: application/json", "Content-type: application/json");
 
 
         $url = $this->getApiUrl($resource);
-
-
-        // Шлем запрос в курл
-        $ch = curl_init($url);
         $data_json = json_encode($data);
 
+        $allow_url_fopen = ini_get('allow_url_fopen');
+        if (function_exists('curl_init')) {
+            // Шлем запрос в курл
+            $ch = curl_init($url);
 
-        // основные опции курл
-        $this->curlOpts($ch);
+            // основные опции курл
+            $this->curlOpts($ch);
 
-        // передаем заголовки
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+            // передаем заголовки
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data_json);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
+            if ($httpCode == '204') return (object)array(true);
 
-        if ($httpCode == '204') return (object)array(true);
+        } elseif (!empty($allow_url_fopen)) {
+            $opts = array(
+                'http' => array(
+                    'method' => 'DELETE',
+                    'content' => $data_json,
+                    'header' => $headers
+                )
+            );
+
+            # создание контекста потока
+            $context = stream_context_create($opts);
+            # отправляем запрос и получаем ответ от сервера
+            $response = @file_get_contents($url, 0, $context);
+
+            if (in_array('HTTP/1.1 204 No Content', $http_response_header)) return (object)array(true);
+        } else {
+            return $this->errorCritical('CURL not installed & file_get_contents disabled');
+        }
 
         if (!$response) return $this->errorCritical('Unknown error in curl');
         $response = json_decode($response);
@@ -284,7 +332,7 @@ class webmasterApi
      * @param $ch resource curl
      * @return true
      */
-    public function curlOpts(&$ch)
+    protected function curlOpts(&$ch)
     {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
@@ -292,7 +340,6 @@ class webmasterApi
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
         return true;
     }
-
 
     /**
      * Convert post-data array to string
@@ -308,22 +355,18 @@ class webmasterApi
     private function dataToString($data)
     {
         $new_data = array();
-        foreach ($data as $param=>$value)
-        {
-            if(is_string($value)||is_int($value)||is_float($value)) $new_data[] = urlencode($param)."=".urlencode($value);
-            elseif (is_array($value))
-            {
-                foreach ($value as $value_item)
-                {
-                    $new_data[] = urlencode($param)."=".urlencode($value_item);
+        foreach ($data as $param => $value) {
+            if (is_string($value) || is_int($value) || is_float($value)) $new_data[] = urlencode($param) . "=" . urlencode($value);
+            elseif (is_array($value)) {
+                foreach ($value as $value_item) {
+                    $new_data[] = urlencode($param) . "=" . urlencode($value_item);
                 }
-            } else
-            {
-                $this->errorWarning("Bad type of key ".$param.". Value must be string or array");
+            } else {
+                $this->errorWarning("Bad type of key " . $param . ". Value must be string or array");
                 continue;
             }
         }
-        return implode("&",$new_data);
+        return implode("&", $new_data);
     }
 
 
@@ -338,10 +381,9 @@ class webmasterApi
     private function errorCritical($message, $json = true)
     {
         $this->lastError = $message;
-        if($json)
-        {
+        if ($json) {
             if ($this->triggerError) trigger_error($message, E_USER_ERROR);
-            return (object) array('error_code'=>'CRITICAL_ERROR','error_message'=>$message);
+            return (object)array('error_code' => 'CRITICAL_ERROR', 'error_message' => $message);
         }
         return false;
     }
@@ -358,14 +400,12 @@ class webmasterApi
     private function errorWarning($message, $json = true)
     {
         $this->lastError = $message;
-        if($json)
-        {
-            if($this->triggerError) trigger_error($message,E_USER_NOTICE);
-            return (object) array('error_code'=>'CRITICAL_ERROR','error_message'=>$message);
+        if ($json) {
+            if ($this->triggerError) trigger_error($message, E_USER_NOTICE);
+            return (object)array('error_code' => 'CRITICAL_ERROR', 'error_message' => $message);
         }
         return false;
     }
-
 
 
     /**
@@ -379,13 +419,12 @@ class webmasterApi
     private function getUserID()
     {
         $ret = $this->get('/user/');
-        if(!isset($ret->user_id)||!intval($ret->user_id))
-        {
+        if (!isset($ret->user_id) || !intval($ret->user_id)) {
             $mes = "Can't resolve USER ID";
-            if(isset($ret->error_message)) $mes.= ". ".$ret->error_message;
+            if (isset($ret->error_message)) $mes .= ". " . $ret->error_message;
             return $this->errorCritical($mes);
         }
-        return (int)$ret->user_id;
+        return $ret->user_id;
     }
 
 
@@ -401,7 +440,7 @@ class webmasterApi
      */
     public function addHost($url)
     {
-        $ret = $this->post('/hosts/',array("host_url"=>$url));
+        $ret = $this->post('/hosts/', array("host_url" => $url));
         return $ret;
     }
 
@@ -416,7 +455,7 @@ class webmasterApi
      */
     public function deleteHost($hostID)
     {
-        $ret = $this->delete('/hosts/'.$hostID."/");
+        $ret = $this->delete('/hosts/' . $hostID . "/");
         return $ret;
     }
 
@@ -446,7 +485,7 @@ class webmasterApi
      */
     public function checkVerification($hostID)
     {
-        $ret = $this->get('/hosts/'.$hostID.'/verification/');
+        $ret = $this->get('/hosts/' . $hostID . '/verification/');
         return $ret;
     }
 
@@ -466,7 +505,7 @@ class webmasterApi
     public function verifyHost($hostID, $type)
     {
 
-        $ret = $this->post('/hosts/'.$hostID.'/verification/?verification_type='.$type,array());
+        $ret = $this->post('/hosts/' . $hostID . '/verification/?verification_type=' . $type, array());
         return $ret;
     }
 
@@ -482,7 +521,7 @@ class webmasterApi
      */
     public function getHostInfo($hostID)
     {
-        $ret = $this->get('/hosts/'.$hostID."/");
+        $ret = $this->get('/hosts/' . $hostID . "/");
 
         return $ret;
     }
@@ -499,7 +538,7 @@ class webmasterApi
      */
     public function getHostSummary($hostID)
     {
-        $ret = $this->get('/hosts/'.$hostID."/summary/");
+        $ret = $this->get('/hosts/' . $hostID . "/summary/");
 
         return $ret;
     }
@@ -516,7 +555,7 @@ class webmasterApi
      */
     public function getHostOwners($hostID)
     {
-        $ret = $this->get('/hosts/'.$hostID."/owners/");
+        $ret = $this->get('/hosts/' . $hostID . "/owners/");
 
         return $ret;
     }
@@ -536,16 +575,15 @@ class webmasterApi
      *
      * @return object Json
      */
-    public function getHostSitemaps($hostID, $parentID=null)
+    public function getHostSitemaps($hostID, $parentID = null)
     {
 
         $get = array();
-        if($parentID)
-        {
-            $get['parent_id']=$parentID;
+        if ($parentID) {
+            $get['parent_id'] = $parentID;
         }
 
-        $ret = $this->get('/hosts/'.$hostID."/sitemaps/",$get);
+        $ret = $this->get('/hosts/' . $hostID . "/sitemaps/", $get);
 
         return $ret;
     }
@@ -562,7 +600,7 @@ class webmasterApi
      */
     public function getHostUserSitemaps($hostID)
     {
-        $ret = $this->get('/hosts/'.$hostID."/user-added-sitemaps/");
+        $ret = $this->get('/hosts/' . $hostID . "/user-added-sitemaps/");
 
         return $ret;
     }
@@ -580,7 +618,7 @@ class webmasterApi
     public function addSitemap($hostID, $url)
     {
 
-        $ret = $this->post('/hosts/'.$hostID."/user-added-sitemaps/",array("url"=>$url));
+        $ret = $this->post('/hosts/' . $hostID . "/user-added-sitemaps/", array("url" => $url));
 
         return $ret;
     }
@@ -602,7 +640,7 @@ class webmasterApi
     public function deleteSitemap($hostID, $sitemap_id)
     {
 
-        $ret = $this->delete('/hosts/'.$hostID."/user-added-sitemaps/".$sitemap_id."/");
+        $ret = $this->delete('/hosts/' . $hostID . "/user-added-sitemaps/" . $sitemap_id . "/");
 
         return $ret;
     }
@@ -625,14 +663,14 @@ class webmasterApi
      *
      * @return object Json
      */
-    public function getIndexingHistory($hostID,$indexing_indicators=array('DOWNLOADED','EXCLUDED','SEARCHABLE',),$date_from=null,$date_to=null)
+    public function getIndexingHistory($hostID, $indexing_indicators = array('DOWNLOADED', 'EXCLUDED', 'SEARCHABLE',), $date_from = null, $date_to = null)
     {
-        if(!$date_from) $date_from = time()-1209600;
-        if(!$date_to) $date_to = time();
-        if(!intval($date_to)||!$date_to) return $this->errorCritical("Bad timestamp to \$date_to");
-        if(!intval($date_from)||!$date_from) return $this->errorCritical("Bad timestamp to \$date_from");
-        if($date_to<$date_from) return $this->errorCritical("Date to can't be smaller then Date from");
-        $ret = $this->get('/hosts/'.$hostID."/indexing-history/",array("indexing_indicator"=>$indexing_indicators,'date_from'=>date(DATE_ISO8601,$date_from),'date_to'=>date(DATE_ISO8601,$date_to)));
+        if (!$date_from) $date_from = time() - 1209600;
+        if (!$date_to) $date_to = time();
+        if (!intval($date_to) || !$date_to) return $this->errorCritical("Bad timestamp to \$date_to");
+        if (!intval($date_from) || !$date_from) return $this->errorCritical("Bad timestamp to \$date_from");
+        if ($date_to < $date_from) return $this->errorCritical("Date to can't be smaller then Date from");
+        $ret = $this->get('/hosts/' . $hostID . "/indexing-history/", array("indexing_indicator" => $indexing_indicators, 'date_from' => date(DATE_ISO8601, $date_from), 'date_to' => date(DATE_ISO8601, $date_to)));
 
         return $ret;
     }
@@ -651,11 +689,11 @@ class webmasterApi
      *
      * @return object Json
      */
-    public function getTicHistory($hostID,$date_from=null,$date_to=null)
+    public function getTicHistory($hostID, $date_from = null, $date_to = null)
     {
-        if(!$date_from) $date_from = time()-1209600;
-        if(!$date_to) $date_to = time();
-        $ret = $this->get('/hosts/'.$hostID."/tic-history/",array('date_from'=>date(DATE_ISO8601,$date_from),'date_to'=>date(DATE_ISO8601,$date_to)));
+        if (!$date_from) $date_from = time() - 1209600;
+        if (!$date_to) $date_to = time();
+        $ret = $this->get('/hosts/' . $hostID . "/tic-history/", array('date_from' => date(DATE_ISO8601, $date_from), 'date_to' => date(DATE_ISO8601, $date_to)));
 
         return $ret;
     }
@@ -672,9 +710,9 @@ class webmasterApi
      *
      * @return object Json
      */
-    public function getPopularQueries($hostID,$order_by='TOTAL_CLICKS',$indicators=array())
+    public function getPopularQueries($hostID, $order_by = 'TOTAL_CLICKS', $indicators = array())
     {
-        $ret = $this->get('/hosts/'.$hostID."/search-queries/popular/",array("order_by"=>$order_by,"query_indicator"=>$indicators));
+        $ret = $this->get('/hosts/' . $hostID . "/search-queries/popular/", array("order_by" => $order_by, "query_indicator" => $indicators));
 
         return $ret;
     }
@@ -691,9 +729,9 @@ class webmasterApi
      *
      * @return object Json
      */
-    public function getOriginalTexts($hostID,$offset=0,$limit=100)
+    public function getOriginalTexts($hostID, $offset = 0, $limit = 100)
     {
-        $ret = $this->get('/hosts/'.$hostID."/original-texts/",array("offset"=>$offset,"limit"=>$limit));
+        $ret = $this->get('/hosts/' . $hostID . "/original-texts/", array("offset" => $offset, "limit" => $limit));
 
         return $ret;
     }
@@ -711,9 +749,9 @@ class webmasterApi
      *
      * @return object Json
      */
-    public function addOriginalText($hostID,$content)
+    public function addOriginalText($hostID, $content)
     {
-        $ret = $this->post('/hosts/'.$hostID."/original-texts/",array("content"=>$content));
+        $ret = $this->post('/hosts/' . $hostID . "/original-texts/", array("content" => $content));
 
         return $ret;
     }
@@ -731,13 +769,11 @@ class webmasterApi
      */
     public function deleteOriginalText($hostID, $text_id)
     {
-        $ret = $this->delete('/hosts/'.$hostID."/original-texts/".urlencode($text_id)."/");
+        $ret = $this->delete('/hosts/' . $hostID . "/original-texts/" . urlencode($text_id) . "/");
 
 
         return $ret;
     }
-
-
 
 
     /**
