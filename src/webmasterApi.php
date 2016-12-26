@@ -776,6 +776,11 @@ class webmasterApi
     }
 
 
+    public function getExternalLinks($hostID, $offset = 0, $limit = 100)
+    {
+        return $this->get('/hosts/' . $hostID . '/links/external/samples/', array("offset" => $offset, "limit" => $limit));
+    }
+
     /**
      * Get Access token by code and client secret
      *
