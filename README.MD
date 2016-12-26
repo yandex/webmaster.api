@@ -26,6 +26,19 @@ or
 php composer.phar require yandex/webmaster.api "dev-master"
 ```
 
+
+Also required prior to placing the package on packagist.org
+```js
+    ...
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/yandex/webmaster.api"
+        }
+    ]
+    ...
+```
+
 ### Manual
 
 Clone repository and require webmasterApi.php
