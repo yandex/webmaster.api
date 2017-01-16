@@ -697,6 +697,23 @@ class webmasterApi
 
         return $ret;
     }
+    
+    /**
+     * Get External links history
+     *
+     * Получение истории изменения количества внешних ссылок на сайт
+     *
+     * @param $hostID string Host id in webmaster
+     * @param $indicator string - Индикатор количества внешних ссылок
+     *
+     * @return object Json
+     */
+    public function getExternalLinksHistory($hostID, $indicator = 'LINKS_TOTAL_COUNT')
+    {
+        $ret = $this->get('/hosts/' . $hostID . "/links/external/history/", array("indicator" => $indicator));
+
+        return $ret;
+    }
 
 
     /**
