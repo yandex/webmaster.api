@@ -65,26 +65,7 @@ class webmasterApi
      *
      * @var int
      */
-    public $userID = null;
-
-
-    /**
-     * Last error message
-     *
-     * @var string
-     */
-    public $lastError = '';
-
-
-    /**
-     *
-     * User trigger errors
-     *
-     * Передавать ли возникающие ошибки в стандартный поток ошибок/
-     *
-     * @var boolean
-     */
-    public $triggerError = true;
+    protected $userID = null;
 
 
     /**
@@ -100,8 +81,7 @@ class webmasterApi
         $this->accessToken = $accessToken;
         $this->userID = $this->getUserID();
         if (isset($this->userID->error_message)) {
-            $this->errorCritical($this->userID->error_message);
-            $this->userID = null;
+            throw new webmasterException($this->userID->error_message);
         }
 
     }
@@ -119,9 +99,6 @@ class webmasterApi
     static function initApi($accessToken)
     {
         $wmApi = new self($accessToken);
-        if (!empty($wmApi->lastError)) {
-            return (object)array('error_message' => $wmApi->lastError);
-        }
         return $wmApi;
     }
 
@@ -139,7 +116,6 @@ class webmasterApi
     {
         $apiurl = $this->apiUrl;
         if ($resource !== '/user/') {
-            if (!$this->userID) return $this->errorCritical("Can't get hand " . $resource . " without userID");
             $apiurl .= "/user/" . $this->userID;
         }
         return $apiurl . $resource;
@@ -192,15 +168,15 @@ class webmasterApi
             $response = @file_get_contents($url, 0, $context);
 
         } else {
-            return $this->errorCritical('CURL not installed & file_get_contents disabled');
+            throw new webmasterException('CURL not installed & file_get_contents disabled');
         }
 
 
-        if (!$response) return $this->errorCritical('Error in curl when get [' . $url . '] ' . $curl_error);
+        if (!$response) throw new webmasterException('Error in curl when get [' . $url . '] ' . $curl_error);
         $response = json_decode($response, false, 512, JSON_BIGINT_AS_STRING);
 
 
-        if (!is_object($response)) return $this->errorCritical('Unknown error in response: Not object given');
+        if (!is_object($response)) throw new webmasterException('Unknown error in response: Not object given');
         return $response;
     }
 
@@ -250,13 +226,13 @@ class webmasterApi
             $response = @file_get_contents($url, 0, $context);
 
         } else {
-            return $this->errorCritical('CURL not installed & file_get_contents disabled');
+            throw new webmasterException('CURL not installed & file_get_contents disabled');
         }
 
-        if (!$response) return $this->errorCritical('Unknown error in curl');
+        if (!$response) throw new webmasterException('Unknown error in curl');
         $response = json_decode($response);
 
-        if (!is_object($response)) return $this->errorCritical('Unknown error in curl');
+        if (!is_object($response)) throw new webmasterException('Unknown error in curl');
         return $response;
     }
 
@@ -312,13 +288,13 @@ class webmasterApi
 
             if (in_array('HTTP/1.1 204 No Content', $http_response_header)) return (object)array(true);
         } else {
-            return $this->errorCritical('CURL not installed & file_get_contents disabled');
+            throw new webmasterException('CURL not installed & file_get_contents disabled');
         }
 
-        if (!$response) return $this->errorCritical('Unknown error in curl');
+        if (!$response) throw new webmasterException('Unknown error in curl');
         $response = json_decode($response);
 
-        if (!is_object($response)) return $this->errorCritical('Unknown error in curl');
+        if (!is_object($response)) throw new webmasterException('Unknown error in curl');
         return $response;
     }
 
@@ -362,51 +338,11 @@ class webmasterApi
                     $new_data[] = urlencode($param) . "=" . urlencode($value_item);
                 }
             } else {
-                $this->errorWarning("Bad type of key " . $param . ". Value must be string or array");
-                continue;
+                throw new webmasterException("Bad type of key " . $param . ". Value must be string or array");
             }
         }
         return implode("&", $new_data);
     }
-
-
-    /**
-     * Save error message and return false
-     *
-     * @param $message string Text of message
-     * @param $json boolean return false as json error
-     *
-     * @return false|object
-     */
-    private function errorCritical($message, $json = true)
-    {
-        $this->lastError = $message;
-        if ($json) {
-            if ($this->triggerError) trigger_error($message, E_USER_ERROR);
-            return (object)array('error_code' => 'CRITICAL_ERROR', 'error_message' => $message);
-        }
-        return false;
-    }
-
-
-    /**
-     * Save and log notice message and return false
-     *
-     * @param $message string Text of message
-     * @param $json boolean return false as json error
-     *
-     * @return false|object
-     */
-    private function errorWarning($message, $json = true)
-    {
-        $this->lastError = $message;
-        if ($json) {
-            if ($this->triggerError) trigger_error($message, E_USER_NOTICE);
-            return (object)array('error_code' => 'CRITICAL_ERROR', 'error_message' => $message);
-        }
-        return false;
-    }
-
 
     /**
      * Get User ID for current access token
@@ -421,8 +357,10 @@ class webmasterApi
         $ret = $this->get('/user/');
         if (!isset($ret->user_id) || !intval($ret->user_id)) {
             $mes = "Can't resolve USER ID";
-            if (isset($ret->error_message)) $mes .= ". " . $ret->error_message;
-            return $this->errorCritical($mes);
+            if (isset($ret->error_message)) {
+				$mes .= ". " . $ret->error_message;
+			}
+            throw new webmasterException($mes);
         }
         return $ret->user_id;
     }
@@ -667,9 +605,9 @@ class webmasterApi
     {
         if (!$date_from) $date_from = time() - 1209600;
         if (!$date_to) $date_to = time();
-        if (!intval($date_to) || !$date_to) return $this->errorCritical("Bad timestamp to \$date_to");
-        if (!intval($date_from) || !$date_from) return $this->errorCritical("Bad timestamp to \$date_from");
-        if ($date_to < $date_from) return $this->errorCritical("Date to can't be smaller then Date from");
+        if (!intval($date_to) || !$date_to) throw new webmasterException("Bad timestamp to \$date_to");
+        if (!intval($date_from) || !$date_from) throw new webmasterException("Bad timestamp to \$date_from");
+        if ($date_to < $date_from) throw new webmasterException("Date to can't be smaller then Date from");
         $ret = $this->get('/hosts/' . $hostID . "/indexing-history/", array("indexing_indicator" => $indexing_indicators, 'date_from' => date(DATE_ISO8601, $date_from), 'date_to' => date(DATE_ISO8601, $date_to)));
 
         return $ret;
@@ -849,7 +787,3 @@ class webmasterApi
         return $response;
     }
 }
-
-
-
-
