@@ -76,14 +76,17 @@ class webmasterApi
      *
      * @param $accessToken string access token from Yandex ouath serverh
      */
-    function __construct($accessToken)
+    function __construct($accessToken, $userId = null)
     {
         $this->accessToken = $accessToken;
-        $this->userID = $this->getUserID();
-        if (isset($this->userID->error_message)) {
-            throw new webmasterException($this->userID->error_message);
-        }
-
+        if (is_null($userId)) {
+            $this->userID = $this->getUserID();
+            if (isset($this->userID->error_message)) {
+                throw new webmasterException($this->userID->error_message);
+            }
+        } else {
+	    $this->userID = $userId;
+	}
     }
 
 
@@ -352,17 +355,21 @@ class webmasterApi
      *
      * @return int|false
      */
-    private function getUserID()
+    public function getUserID()
     {
-        $ret = $this->get('/user/');
-        if (!isset($ret->user_id) || !intval($ret->user_id)) {
-            $mes = "Can't resolve USER ID";
-            if (isset($ret->error_message)) {
-				$mes .= ". " . $ret->error_message;
-			}
-            throw new webmasterException($mes);
+        if (is_null($this->userID)) {
+            $ret = $this->get('/user/');
+            if (!isset($ret->user_id) || !intval($ret->user_id)) {
+                $mes = "Can't resolve USER ID";
+                if (isset($ret->error_message)) {
+                    $mes .= ". " . $ret->error_message;
+                }
+                throw new webmasterException($mes);
+            }
+            return $ret->user_id;
+        } else {
+            return $this->userID;
         }
-        return $ret->user_id;
     }
 
 
