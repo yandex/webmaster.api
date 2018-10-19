@@ -59,10 +59,10 @@ Clone repository and require webmasterApi.php
 2. For test you can get temporary Access Token (read comments to method webmasterApi::getAccessToken )
 
 3. If you want to get correct Access Token, you must create authorization code.
-  2.1 Read doc on https://tech.yandex.ru/oauth/doc/dg/reference/web-client-docpage/
-  2.2 Locate your client to https://oauth.yandex.ru/authorize?response_type=code&client_id=[yourclient_id]
-  2.3 Use static method getAccessToken to get access token
-  2.4 Create webmasterApi object with static method webmasterApi::initApi
+    1. Read doc on https://tech.yandex.ru/oauth/doc/dg/reference/web-client-docpage/
+    2. Locate your client to https://oauth.yandex.ru/authorize?response_type=code&client_id=[yourclient_id]
+    3. Use static method getAccessToken to get access token
+    4. Create webmasterApi object with static method webmasterApi::initApi
 
 You can see example/.auth.php to see how it working
 
