@@ -7,7 +7,7 @@
     "api"
   ],
   "homepage": "https://github.com/yandex/webmaster.api",
-  "license": "Mozilla Public License Version 2.0",
+  "license": "MPL-2.0",
   "authors": [
     {
       "name": "Dmitriy Popov",
@@ -22,7 +22,8 @@
     }
   ],
   "require": {
-    "php": ">=5.3.0"
+    "php": ">=5.3.0",
+    "ext-curl": "*"
   },
   "autoload": {
     "psr-4": {
